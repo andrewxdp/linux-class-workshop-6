@@ -1,0 +1,63 @@
+version: '3.8'
+services:
+  # PostgreSQL Database
+  blog-db:
+    image: postgres:13
+    container_name: blog-db
+    environment:
+      POSTGRES_DB: blog
+      POSTGRES_USER: bloguser
+      POSTGRES_PASSWORD: blogpass
+    volumes:
+      - blog-data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - blog-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bloguser -d blog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  # Node.js Backend API
+  blog-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: blog-api
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DB_USER: bloguser
+      DB_HOST: blog-db
+      DB_NAME: blog
+      DB_PASSWORD: blogpass
+      DB_PORT: 5432
+    depends_on:
+      blog-db:
+        condition: service_healthy
+    networks:
+      - blog-network
+    restart: unless-stopped
+
+  # Nginx Web Server
+  blog-nginx:
+    image: nginx:alpine
+    container_name: blog-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - blog-api
+    networks:
+      - blog-network
+    restart: unless-stopped
+
+networks:
+  blog-network:
+    driver: bridge
+
+volumes:
+  blog-data:
