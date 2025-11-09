@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blog Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .post {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .title {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .date {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>My Blog Platform</h1>
+    <div id="posts">Loading posts...</div>
+    <script>
+        fetch('/api/posts')
+            .then(response => response.json())
+            .then(posts => {
+                const container = document.getElementById('posts');
+                container.innerHTML = posts.map(post => `
+                    <div class="post">
+                        <div class="title">${post.title}</div>
+                        <div class="content">${post.content}</div>
+                        <div class="date">Posted: ${new Date(post.created_at).toLocaleDateString()}</div>
+                    </div>
+                `).join('');
+            })
+            .catch(error => {
+                document.getElementById('posts').innerHTML = 'Error loading posts: ' + error.message;
+            });
+    </script>
+</body>
+</html>
